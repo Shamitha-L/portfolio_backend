@@ -1,44 +1,38 @@
 const express = require("express");
-const multer = require("multer");
 const Post = require("../models/Post");
+const upload = require("../middleware/upload");
+
 const router = express.Router();
 
-// Setup multer storage
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/");
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
-
-const upload = multer({ storage });
-
-// POST route
-router.post("/", upload.single("image"), async (req, res) => {
+router.post("/", upload, async (req, res) => {
   try {
-    const post = new Post({
-      title: req.body.title,
-      description: req.body.description,
-      image: req.file ? req.file.filename : null,
+    const { titles, paragraphs } = req.body;
+
+    const parsedTitles = JSON.parse(titles);
+    const parsedParagraphs = JSON.parse(paragraphs);
+
+    const imageFiles = req.files["images"] || [];
+    const videoFiles = req.files["videos"] || [];
+
+    const imageUrls = imageFiles.map((f) => "/uploads/" + f.filename);
+    const videoUrls = videoFiles.map((f) => "/uploads/" + f.filename);
+
+    const newPost = new Post({
+      titles: parsedTitles,
+      paragraphs: parsedParagraphs,
+      images: imageUrls,
+      videos: videoUrls
     });
 
-    await post.save();
-    res.json({ success: true, post });
-  } catch (err) {
-    console.error("❌ Error saving post:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
+    const saved = await newPost.save();
 
-// GET route
-router.get("/", async (req, res) => {
-  try {
-    const posts = await Post.find().sort({ createdAt: -1 });
-    res.json(posts);
+    res.json({
+      message: "Post created successfully",
+      post: saved
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err);
+    res.status(500).json({ error: "Internal Error", details: err.message });
   }
 });
 
