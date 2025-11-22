@@ -56,4 +56,32 @@ router.get("/", async (req, res) => {
 
 
 
+router.get("/:id", async (req, res) => {
+  try {
+    const postId = req.params.id;
+
+    const post = await Post.findById(postId);
+
+    if (!post) {
+      return res.status(404).json({
+        error: "Post not found"
+      });
+    }
+
+    res.json({
+      message: "Post fetched successfully",
+      post: post
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Internal Error",
+      details: err.message
+    });
+  }
+});
+
+
+
+
 module.exports = router;
