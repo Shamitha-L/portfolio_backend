@@ -36,4 +36,24 @@ router.post("/", upload, async (req, res) => {
   }
 });
 
+
+router.get("/", async (req, res) => {
+  try {
+    const posts = await Post.find();
+
+    res.json({
+      message: "Posts fetched successfully",
+      posts: posts
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Internal Error",
+      details: err.message
+    });
+  }
+});
+
+
+
 module.exports = router;
